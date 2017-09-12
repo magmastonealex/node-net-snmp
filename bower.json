@@ -1,7 +1,7 @@
 {
   "name": "nodenetsnmp",
   "description": "SNMP working in the browser (Miovision edition)",
-  "main": "index.js",
+  "main": "nodenetsnmp.js",
   "authors": [
     "Stephen Vickers",
     "changes by Alex Roth"
