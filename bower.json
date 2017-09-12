@@ -1,0 +1,23 @@
+{
+  "name": "nodenetsnmp",
+  "description": "SNMP working in the browser (Miovision edition)",
+  "main": "index.js",
+  "authors": [
+    "Stephen Vickers",
+    "changes by Alex Roth"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "snmp",
+    "snmpv1",
+    "snmpv2",
+    "snmpv2c",
+    "net",
+    "network",
+    "mon",
+    "monitor",
+    "monitoring"
+  ],
+  "homepage": "https://github.com/magmastonealex/node-net-snmp",
+  "private": true
+}
