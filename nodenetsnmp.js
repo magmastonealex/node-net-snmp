@@ -322,7 +322,6 @@
                         if (typeof value == "string")
                             buffer.writeString (value);
                         else {
-                            console.log('writingBuffer');
                             buffer.writeBuffer (value, ObjectType.OctetString);
                         }
                     } else if (type == ObjectType.Null) {
@@ -491,7 +490,6 @@
             this.reqCount = 0;
 
             this.dgram = delegate;
-            console.log(delegate);
         };
 
         Session.prototype.close = function () {
@@ -552,33 +550,29 @@
         };
 
         Session.prototype.onMsg = function (buffer, remote) {
+            var message = new ResponseMessage (buffer);
+
+            var req = this.unregisterRequest (message.pdu.id);
+            if (! req)
+                return;
+
             try {
-                var message = new ResponseMessage (buffer);
-
-                var req = this.unregisterRequest (message.pdu.id);
-                if (! req)
-                    return;
-
-                try {
-                    if (message.version != req.message.version) {
-                        req.responseCb (new ResponseInvalidError ("Version in request '"
-                                + req.message.version + "' does not match version in "
-                                + "response '" + message.version));
-                    } else if (message.community != req.message.community) {
-                        req.responseCb (new ResponseInvalidError ("Community '"
-                                + req.message.community + "' in request does not match "
-                                + "community '" + message.community + "' in response"));
-                    } else if (message.pdu.type == PduType.GetResponse) {
-                        req.onResponse (req, message);
-                    } else {
-                        req.responseCb (new ResponseInvalidError ("Unknown PDU type '"
-                                + message.pdu.type + "' in response"));
-                    }
-                } catch (error) {
-                    req.responseCb (error);
+                if (message.version != req.message.version) {
+                    req.responseCb (new ResponseInvalidError ("Version in request '"
+                            + req.message.version + "' does not match version in "
+                            + "response '" + message.version));
+                } else if (message.community != req.message.community) {
+                    req.responseCb (new ResponseInvalidError ("Community '"
+                            + req.message.community + "' in request does not match "
+                            + "community '" + message.community + "' in response"));
+                } else if (message.pdu.type == PduType.GetResponse) {
+                    req.onResponse (req, message);
+                } else {
+                    req.responseCb (new ResponseInvalidError ("Unknown PDU type '"
+                            + message.pdu.type + "' in response"));
                 }
             } catch (error) {
-                this.emit("error", error);
+                req.responseCb (error);
             }
         };
 
@@ -942,7 +936,6 @@
             }
         };
 
-        //TODO: Write a Uint8Array instead.
         Writer.prototype.writeBuffer = function(buf, tag) {
 
             // If no tag is specified we will assume `buf` already contains tag and length
@@ -955,7 +948,6 @@
             for (var i = 0; i < buf.length; i++) {
                 this._buf[i+this._offset] = buf[i];
             }
-        //  console.log(this._buf);
             //buf.copy(this._buf, this._offset, 0, buf.length);
             this._offset += buf.length;
         };
