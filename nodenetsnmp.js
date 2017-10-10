@@ -1081,8 +1081,58 @@
         Writer.prototype._shift = function(start, len, shift) {
 
             //this._buf.copy(this._buf, start + shift, start, start + len);
-            this._buf.copyWithin(start+shift, start, start+len);
+
+            //IE11 does not support copyWithin.
+            //this._buf.copyWithin(start+shift, start, start+len);
+            this._copyWithin(start+shift, start, start+len);
             this._offset += shift;
+        };
+
+        //Borrowed liberally from https://github.com/inexorabletash/polyfill.
+        // Code was released into public domain.
+        Writer.prototype._copyWithin = function(target, start, end) {
+            var len = this._buf.length;
+            var relativeTarget = target;
+            var to;
+            if (relativeTarget < 0)
+              to = Math.max(len + relativeTarget, 0);
+            else
+              to = Math.min(relativeTarget, len);
+            var relativeStart = start;
+            var from;
+            if (relativeStart < 0)
+              from = Math.max(len + relativeStart, 0);
+            else
+              from = Math.min(relativeStart, len);
+            var relativeEnd = end;
+            var final;
+            if (relativeEnd < 0)
+              final = Math.max(len + relativeEnd, 0);
+            else
+              final = Math.min(relativeEnd, len);
+            var count = Math.min(final - from, len - to);
+            var direction;
+            if (from < to && to < from + count) {
+              direction = -1;
+              from = from + count - 1;
+              to = to + count - 1;
+            } else {
+              direction = 1;
+            }
+            while (count > 0) {
+              var fromKey = from;
+              var toKey = to;
+              var fromPresent = this._buf[fromKey] !== undefined;
+              if (fromPresent) {
+                var fromVal = this._buf[fromKey];
+                this._buf[toKey] = fromVal;
+              } else {
+                delete this._buf[toKey];
+              }
+              from = from + direction;
+              to = to + direction;
+              count = count - 1;
+            }
         };
 
         Writer.prototype._ensure = function(len) {
@@ -1361,6 +1411,30 @@
         };
 
 
+        //Borrowed liberally from https://github.com/inexorabletash/polyfill.
+        // Code was released into public domain.
+        if (!Uint8Array.prototype.slice) {
+            Uint8Array.prototype.slice = function slice(start, end) {
+                var len = this.length;
+                var relativeStart = start;
+                var k = (relativeStart < 0) ? Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
+                var relativeEnd = (end === undefined) ? len : end;
+                var final = (relativeEnd < 0) ? Math.max(len + relativeEnd, 0) : Math.min(relativeEnd, len);
+                var count = final - k;
+
+                var a = new Uint8Array(count);
+
+                var n = 0;
+                while (k < final) {
+                  var kValue = this[k];
+                  a[n] = kValue;
+                  ++k;
+                  ++n;
+                }
+                return a;
+            };
+        }
+
         ///--- Exported API
 
         var ber = {
@@ -1373,5 +1447,6 @@
                 return new Session (target, community, options, delegate);
             }
         };
+
     }
 })();
